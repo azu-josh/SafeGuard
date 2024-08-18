@@ -3,112 +3,90 @@ import {
   View,
   Text,
   TouchableOpacity,
-  FlatList,
   StyleSheet,
   SafeAreaView,
   Switch,
-  KeyboardAvoidingView,
+  Image,
   Platform,
 } from 'react-native';
-import { WebView } from 'react-native-webview';
 
 const AdsBlockerComponent = () => {
-  const [blockedUrls, setBlockedUrls] = useState([
-    '*://*doubleclick.net/*',
-    '*://*googleadservices.com/*',
-  ]);
-  const [currentUrl, setCurrentUrl] = useState('https://www.google.com'); // Change to a real URL for testing
-  const [isAdBlockEnabled, setIsAdBlockEnabled] = useState(true);
-  const [isFullScreen, setIsFullScreen] = useState(false);
+  const [isAdBlockEnabled, setIsAdBlockEnabled] = useState(false);
+  const [showInstructions, setShowInstructions] = useState(false);
 
-  const adBlockerScript = `
-    const blockedPatterns = ${JSON.stringify(blockedUrls)};
-    const regexps = blockedPatterns.map(pattern => new RegExp(pattern.replace(/\\*/g, '.*')));
-    function blockAds() {
-      document.querySelectorAll('iframe, img, div').forEach(el => {
-        if (regexps.some(regexp => regexp.test(el.src) || regexp.test(el.style.background))) {
-          el.remove();
-        }
-      });
+  const handleToggleAdBlock = () => {
+    if (!isAdBlockEnabled) {
+      // Show instructions on how to enable adblocker in the browser
+      setShowInstructions(true);
+    } else {
+      setIsAdBlockEnabled(false);
     }
-    blockAds();
-    new MutationObserver(blockAds).observe(document, { childList: true, subtree: true });
-  `;
-
-  const handleNavigationError = (syntheticEvent) => {
-    const { nativeEvent } = syntheticEvent;
-    console.warn('WebView navigation error:', nativeEvent);
   };
 
-  const removeUrlFromBlocklist = (urlToRemove) => {
-    setBlockedUrls(blockedUrls.filter(url => url !== urlToRemove));
+  const closeInstructions = () => {
+    setShowInstructions(false);
+    setIsAdBlockEnabled(true);
+  };
+
+  const renderInstructions = () => {
+    if (Platform.OS === 'ios') {
+      return (
+        <View style={styles.instructionsContainer}>
+          <Text style={styles.instructionsTitle}>Enable AdBlocker for Safari</Text>
+          <Text style={styles.instruction}>1. Open Settings.</Text>
+          <Text style={styles.instruction}>2. Go to Safari &gt; Extensions.</Text>
+          <Text style={styles.instruction}>3. Set all AdBlocker toggles to on.</Text>
+          <Text style={styles.instruction}>4. For advanced protection, open Safari, tap the "aA" icon, then tap Manage extensions and switch on the AdBlocker toggle.</Text>
+          <TouchableOpacity style={styles.doneButton} onPress={closeInstructions}>
+            <Text style={styles.doneButtonText}>Done</Text>
+          </TouchableOpacity>
+        </View>
+      );
+    } else if (Platform.OS === 'android') {
+      return (
+        <View style={styles.instructionsContainer}>
+          <Text style={styles.instructionsTitle}>Enable AdBlocker for Chrome</Text>
+          <Text style={styles.instruction}>1. Open Settings.</Text>
+          <Text style={styles.instruction}>2. Go to Chrome &gt; Extensions.</Text>
+          <Text style={styles.instruction}>3. Set all AdBlocker toggles to on.</Text>
+          <Text style={styles.instruction}>4. For advanced protection, open Chrome, go to Extensions, and switch on the AdBlocker toggle.</Text>
+          <TouchableOpacity style={styles.doneButton} onPress={closeInstructions}>
+            <Text style={styles.doneButtonText}>Done</Text>
+          </TouchableOpacity>
+        </View>
+      );
+    }
   };
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <KeyboardAvoidingView
-        style={styles.container}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 64 : 0}
-      >
-        {!isFullScreen ? (
-          <View style={styles.scrollContainer}>
-            <Text style={styles.title}>Ads Blocker</Text>
-            <TouchableOpacity
-              style={styles.webViewButton}
-              onPress={() => setIsFullScreen(true)}
-            >
-              <Text style={styles.webViewButtonText}>Open Virtual Browser</Text>
-            </TouchableOpacity>
-            <FlatList
-              data={blockedUrls}
-              keyExtractor={(item) => item}
-              renderItem={({ item }) => (
-                <View style={styles.urlItem}>
-                  <Text style={styles.urlText}>{item}</Text>
-                  <TouchableOpacity onPress={() => removeUrlFromBlocklist(item)}>
-                    <Text style={styles.removeButtonText}>Remove</Text>
-                  </TouchableOpacity>
-                </View>
-              )}
-              contentContainerStyle={styles.urlList}
-            />
-            <View style={styles.toggleContainer}>
-              <Text style={styles.toggleLabel}>Enable Ad Blocker</Text>
-              <Switch
-                value={isAdBlockEnabled}
-                onValueChange={(value) => setIsAdBlockEnabled(value)}
-              />
-            </View>
-          </View>
-        ) : (
-          <View style={styles.fullScreenContainer}>
-           <WebView>
-  source={{ uri: currentUrl }}
-  style={styles.webViewFullScreen}
-  injectedJavaScript={isAdBlockEnabled ? adBlockerScript : ''}
-  javaScriptEnabled={true}
-  onShouldStartLoadWithRequest={(request) => {
-    // Block navigation if URL matches any patterns in the blockedUrls list when ad blocker is enabled
-    if (isAdBlockEnabled) {
-      const shouldBlock = blockedUrls.some(pattern => new RegExp(pattern.replace(/\*/g, '.*')).test(request.url));
-      return !shouldBlock;
-    }
-    return true; // Allow navigation if ad blocker is disabled
-  }}
-  onError={handleNavigationError}
-  onHttpError={handleNavigationError}
-</WebView>
+      <View style={styles.container}>
+        <Text style={styles.title}>AdBlocker</Text>
 
-            <TouchableOpacity
-              style={styles.exitFullScreenButton}
-              onPress={() => setIsFullScreen(false)}
-            >
-              <Text style={styles.exitFullScreenButtonText}>Exit Full Screen</Text>
-            </TouchableOpacity>
-          </View>
-        )}
-      </KeyboardAvoidingView>
+        <View style={styles.protectionContainer}>
+          <Text style={styles.protectionStatus}>
+            {isAdBlockEnabled ? 'Protection is on' : 'Protection is off'}
+          </Text>
+          <Text style={styles.browserProtection}>{Platform.OS === 'ios' ? 'Safari Protection' : 'Chrome Protection'} is {isAdBlockEnabled ? 'on' : 'off'}</Text>
+
+          <Switch
+            style={styles.toggleSwitch}
+            value={isAdBlockEnabled}
+            onValueChange={handleToggleAdBlock}
+          />
+        </View>
+
+        <Image
+          source={require('../Assets/Ad Blocker.jpg')}
+          style={styles.image}
+        />
+
+        <TouchableOpacity style={styles.premiumButton}>
+          <Text style={styles.premiumButtonText}>Get stronger with Premium!</Text>
+        </TouchableOpacity>
+
+        {showInstructions && renderInstructions()}
+      </View>
     </SafeAreaView>
   );
 };
@@ -120,12 +98,10 @@ const styles = StyleSheet.create({
   },
   container: {
     flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
     padding: 20,
     backgroundColor: '#ffffff',
-  },
-  scrollContainer: {
-    flexGrow: 1,
-    justifyContent: 'center',
   },
   title: {
     fontSize: 24,
@@ -133,69 +109,65 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     textAlign: 'center',
   },
-  webViewButton: {
-    backgroundColor: '#27AE60',
-    padding: 15,
-    borderRadius: 5,
+  protectionContainer: {
     alignItems: 'center',
     marginBottom: 20,
   },
-  webViewButtonText: {
-    color: '#ffffff',
-    fontSize: 18,
+  protectionStatus: {
+    fontSize: 20,
     fontWeight: 'bold',
   },
-  urlList: {
-    paddingVertical: 10,
-  },
-  urlItem: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: '#ccc',
-  },
-  urlText: {
+  browserProtection: {
     fontSize: 16,
+    color: 'gray',
+    marginTop: 5,
   },
-  removeButtonText: {
-    color: '#ff0000',
+  toggleSwitch: {
+    marginTop: 20,
+  },
+  image: {
+    width: 150,
+    height: 150,
+    marginTop: 20,
+  },
+  premiumButton: {
+    marginTop: 20,
+    padding: 15,
+    backgroundColor: '#27AE60',
+    borderRadius: 10,
+  },
+  premiumButtonText: {
+    color: '#ffffff',
+    fontSize: 16,
     fontWeight: 'bold',
   },
-  webViewContainer: {
-    flex: 1,
-    marginTop: 20,
-    height: 400, // Adjust the height as needed
-  },
-  webView: {
-    flex: 1,
-  },
-  toggleContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  toggleLabel: {
-    fontSize: 18,
-  },
-  fullScreenContainer: {
-    flex: 1,
-    backgroundColor: '#ffffff',
-  },
-  webViewFullScreen: {
-    flex: 1,
-  },
-  exitFullScreenButton: {
+  instructionsContainer: {
     position: 'absolute',
-    bottom: 20,
-    right: 20,
-    backgroundColor: '#27AE60',
-    padding: 10,
-    borderRadius: 5,
+    bottom: 0,
+    width: '100%',
+    padding: 20,
+    backgroundColor: '#000000',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
   },
-  exitFullScreenButtonText: {
+  instructionsTitle: {
+    fontSize: 20,
+    color: '#ffffff',
+    marginBottom: 10,
+  },
+  instruction: {
+    fontSize: 16,
+    color: '#ffffff',
+    marginVertical: 5,
+  },
+  doneButton: {
+    marginTop: 20,
+    padding: 10,
+    backgroundColor: '#27AE60',
+    borderRadius: 10,
+    alignItems: 'center',
+  },
+  doneButtonText: {
     color: '#ffffff',
     fontSize: 16,
     fontWeight: 'bold',

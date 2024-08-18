@@ -3,9 +3,8 @@ import { View, Text, Image, TouchableOpacity, FlatList, StyleSheet, SafeAreaView
 import { useNavigation } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import * as ImagePicker from 'expo-image-picker';
-import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { storage } from '../firebaseConfig';
 import { useActionSheet } from '@expo/react-native-action-sheet';
+import AWS from 'aws-sdk';
 
 const SecureVault = () => {
   const navigation = useNavigation();
@@ -13,51 +12,51 @@ const SecureVault = () => {
   const [photos, setPhotos] = useState([]);
   const [uploading, setUploading] = useState(false);
 
-  useEffect(() => {
-    (async () => {
-      const { status: mediaLibraryStatus } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-      if (mediaLibraryStatus !== 'granted') {
-        Alert.alert('Permission Denied', 'Sorry, we need media library permissions to make this work!');
-      }
 
-      const { status: cameraStatus } = await ImagePicker.requestCameraPermissionsAsync();
-      if (cameraStatus !== 'granted') {
-        Alert.alert('Permission Denied', 'Sorry, we need camera permissions to make this work!');
-      }
-    })();
-  }, []);
 
-  const uploadImage = async (uri) => {
+  [
+    {
+      "AllowedHeaders": ["*"],
+      "AllowedMethods": ["GET", "POST", "PUT"],
+      "AllowedOrigins": ["*"],
+      "ExposeHeaders": []
+    }
+  ]
+  
+  // Configure AWS SDK
+  const s3 = new AWS.S3({
+    accessKeyId: 'AKIATOMKLEFOGOJ3SRVO', // Replace with your actual access key, these are suposed to be encrypted to avoid hacking
+    secretAccessKey: 'cAqMdruPF3ouP+VGIBmnQTdApQMhb2dbKUNYGRiH', // Replace with your actual secret access key
+    region: 'US East (N. Virginia) us-east-1', // Replace with your bucket's region
+  });
+
+  const uploadImageToS3 = async (uri) => {
+    setUploading(true);
     try {
       const response = await fetch(uri);
       const blob = await response.blob();
-      const storageRef = ref(storage, `images/${Date.now()}_${Math.random().toString(36).substr(2, 9)}`);
-      setUploading(true);
   
-      const uploadTask = uploadBytes(storageRef, blob);
-      uploadTask.on('state_changed', 
-        (snapshot) => {
-          const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-          console.log('Upload is ' + progress + '% done');
-        }, 
-        (error) => {
-          console.error('Upload error:', error);
-          Alert.alert('Upload failed', error.message);
-          setUploading(false);
-        }, 
-        () => {
-          getDownloadURL(uploadTask.snapshot.ref).then((downloadURL) => {
-            console.log('File available at', downloadURL);
-            const newPhoto = { id: Date.now().toString(), uri: downloadURL };
-            setPhotos([...photos, newPhoto]);
-            setUploading(false);
-          });
+      const uploadParams = {
+        Bucket: 'safeguardb45', // Replace with your bucket name
+        Key: `photos/photo_${Date.now()}.jpg`, // The name of the file in your S3 bucket
+        Body: blob,
+        ContentType: blob.type,
+      };
+  
+      s3.upload(uploadParams, (err, data) => {
+        setUploading(false);
+        if (err) {
+          console.error('Error uploading to S3:', err.message);
+          Alert.alert('Upload failed', err.message);
+        } else {
+          const newPhoto = { id: Date.now().toString(), uri: data.Location };
+          setPhotos([...photos, newPhoto]);
         }
-      );
+      });
     } catch (e) {
-      console.error('Network request failed:', e);
-      Alert.alert('Upload failed', 'Network request failed');
       setUploading(false);
+      console.error('Upload failed:', e.message);
+      Alert.alert('Upload failed', 'Network request failed');  
     }
   };
   
@@ -75,7 +74,7 @@ const SecureVault = () => {
           });
 
           if (!result.canceled) {
-            await uploadImage(result.uri);
+            await uploadImageToS3(result.uri);
           }
         } else if (buttonIndex === 2) {
           let result = await ImagePicker.launchCameraAsync({
@@ -85,12 +84,26 @@ const SecureVault = () => {
           });
 
           if (!result.canceled) {
-            await uploadImage(result.uri);
+            await uploadImageToS3(result.uri);
           }
         }
       }
     );
   };
+
+  useEffect(() => {
+    (async () => {
+      const { status: mediaLibraryStatus } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (mediaLibraryStatus !== 'granted') {
+        Alert.alert('Permission Denied', 'Sorry, we need media library permissions to make this work!');
+      }
+
+      const { status: cameraStatus } = await ImagePicker.requestCameraPermissionsAsync();
+      if (cameraStatus !== 'granted') {
+        Alert.alert('Permission Denied', 'Sorry, we need camera permissions to make this work!');
+      }
+    })();
+  }, []);
 
   return (
     <SafeAreaView style={styles.safeArea}>
