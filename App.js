@@ -22,6 +22,7 @@ import ManageAppPermissions from './src/Component/PAGES/ManageAppPermissions';
 import UploadFile from './src/Component/UploadFile';
 
 import { ActionSheetProvider } from '@expo/react-native-action-sheet';
+import SecurityScanner from './src/Component/PAGES/SecurityScanner';
 
 
 
@@ -48,6 +49,7 @@ const AppStack = () => (
     <Drawer.Screen name="HomeDrawer" component={Layout} />
     <Drawer.Screen name="HomeStackNavigator" component={HomeStackNavigator} />
     <Drawer.Screen name="SecureVault" component={SecureVault} />
+    <Drawer.Screen name="SecurityScanner" component={SecurityScanner} />
     <Drawer.Screen name="AdsBlocker" component={AdBlockerComponent} />
     <Drawer.Screen name="PrivacySettings" component={PrivacySettings} />
     <Drawer.Screen name="NotificationSettings" component={NotificationSettings} />
