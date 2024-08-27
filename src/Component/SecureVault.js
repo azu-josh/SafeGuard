@@ -5,12 +5,14 @@ import Icon from 'react-native-vector-icons/Ionicons';
 import * as ImagePicker from 'expo-image-picker';
 import { useActionSheet } from '@expo/react-native-action-sheet';
 import AWS from 'aws-sdk';
+import * as LocalAuthentication from 'expo-local-authentication'
 
 const SecureVault = () => {
   const navigation = useNavigation();
   const { showActionSheetWithOptions } = useActionSheet();
   const [photos, setPhotos] = useState([]);
   const [uploading, setUploading] = useState(false);
+  const [isBiometricsSupported, setIsBiometricsSupported] = useState(false);
 
 
 
@@ -22,12 +24,70 @@ const SecureVault = () => {
       "ExposeHeaders": []
     }
   ]
-  
+  //for my face id detection and fingerpring config
+  useEffect(()=>{
+    (async ()=> {
+      const compatible = await LocalAuthentication.hasHardwareAsync();
+      setIsBiometricsSupported(compatible);
+    })();
+  });
+const fallBackToDefualtAuth = () => {
+  console.log ('fall back to password authentication');
+
+};
+const alertComponent = (title, mess, btnTxt, btnFunc) => {
+  return Alert.alert(title, mess, [
+    {
+      text:btnTxt,
+      onPress: btnFunc,
+    }
+  ])
+}
+
+const handleBiometricAuth = async ()=> {
+//check if it supports bio
+const isBiometricAvailable =await LocalAuthentication.hasHardwareAsync();
+//Go back if Bio is missing
+if (!isBiometricAvailable)
+  return alertComponet (
+'KINDLY ENTER PIN TO CONTINUE',
+'FACE ID OR FINGERPRINT ISNT SUPPORTED',
+'Ok',
+()=>fallBackToDefualtAuth()
+);
+//Check what Bio is Available 
+let supportedBiometrics;
+is (isBiometricAvailable)
+supportedBiometrics = await LocalAuthentication.supportedAuthenticationTypesAsync()
+
+//check saved Bio locally
+const savedBiometrics = await LocalAuthentication.isEnrolledAsync();
+if (!savedBiometrics)
+  return alertComponent(
+'Biometric Not Found',
+'Please use PIN to login',
+'Ok',
+()=> fallBackToDefualtAuth()
+);
+//authenicate with Bio
+const biometricAuth = await LocalAuthentication.authenticateAsync({
+  promptMessage: 'Login with FcaeID or TouchID',
+  cancelLabel: 'cancel',
+  disableDeviceFallback: true,
+});
+//  Log the to SecureVAULT on successs
+if (biometricAuth) {TwoButtonAlet()};
+console.log ({isBiometricAvailable});
+console.log ({supportedBiometrics});
+console.log({savedBiometrics});
+console.log ({biometricAuth});
+};
+
   // Configure AWS SDK
   const s3 = new AWS.S3({
     accessKeyId: 'AKIATOMKLEFOGOJ3SRVO', // Replace with your actual access key, these are suposed to be encrypted to avoid hacking
     secretAccessKey: 'cAqMdruPF3ouP+VGIBmnQTdApQMhb2dbKUNYGRiH', // Replace with your actual secret access key
-    region: 'US East (N. Virginia) us-east-1', // Replace with your bucket's region
+    region: 'us-east-1', // Replace with your bucket's region
   });
 
   const uploadImageToS3 = async (uri) => {
@@ -74,7 +134,7 @@ const SecureVault = () => {
           });
 
           if (!result.canceled) {
-            await uploadImageToS3(result.uri);
+            await uploadImageToS3(result.assets[0].uri);
           }
         } else if (buttonIndex === 2) {
           let result = await ImagePicker.launchCameraAsync({
@@ -84,7 +144,7 @@ const SecureVault = () => {
           });
 
           if (!result.canceled) {
-            await uploadImageToS3(result.uri);
+            await uploadImageToS3(result.assets[0].uri);
           }
         }
       }

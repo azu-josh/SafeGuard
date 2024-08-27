@@ -55,7 +55,7 @@ const Home = ({ navigation }) => {
             <Text style={styles.homeCardTitle}>APP PERMISSIONS MANAGER</Text>
           </View>
           <View style={styles.homeCardWrapper}>
-            <TouchableOpacity style={styles.homeCard} onPress={() => navigation.navigate('PrivacyScanner')}>
+            <TouchableOpacity style={styles.homeCard} onPress={() => navigation.navigate('SecurityScanner')}>
               <Image source={PrivacyScannerImage} style={styles.homeCardImage} />
             </TouchableOpacity>
             <Text style={styles.homeCardTitle}>PRIVACY SCANNER</Text>

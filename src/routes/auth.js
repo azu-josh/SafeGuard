@@ -1,16 +1,29 @@
 const express = require('express');
 const router = express.Router();
 const jwt = require('jsonwebtoken');
+const bcrypt = require('bcrypt');
+const AWS = require('aws-sdk');
 const User = require('../models/user');
 
-const usernameRegex = /^(?!.*[-_]{2,})(?!.*[-_]$)[a-zA-Z0-9-_]{3,20}$/;
-const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const passwordRegex = /^(?=.*[A-Z])(?=.*\d)[A-Za-z\d]{8,30}$/;
+// AWS S3 Configuration
+const s3 = new AWS.S3();
 
-const suggestUsername = (username) => {
-  const randomNum = Math.floor(Math.random() * 1000);
-  return `${username}${randomNum}`;
-};
+// Function to create an S3 bucket for a new user
+async function createUserBucket(username) {
+    const bucketName = `user-${username}-${Date.now()}`;
+    const params = {
+        Bucket: bucketName,
+        ACL: 'private'  // Set the access level for the bucket
+    };
+    try {
+        await s3.createBucket(params).promise();
+        console.log(`Bucket created successfully: ${bucketName}`);
+        return bucketName;
+    } catch (error) {
+        console.error('Error creating bucket:', error);
+        throw error;
+    }
+}
 
 // Register a new user
 router.post('/register', async (req, res) => {
@@ -27,7 +40,8 @@ router.post('/register', async (req, res) => {
   }
 
   try {
-    const existingUser = await User.findOne({ username });
+    // Check if user already exists
+    let existingUser = await User.findOne({ username });
     if (existingUser) {
       return res.status(400).json({ 
         message: 'Username already taken', 
@@ -35,29 +49,32 @@ router.post('/register', async (req, res) => {
       });
     }
 
-    const user = new User({ username, email, password });
+    // Hash password
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(password, salt);
+
+    // Create new user
+    const user = new User({
+      username,
+      email,
+      password: hashedPassword
+    });
+
+    // Save user to the database
     await user.save();
-    res.status(201).json({ message: 'User registered successfully' });
+
+    // Create S3 bucket for the user
+    const bucketName = await createUserBucket(username);
+
+    // Optionally, save the bucket name to the user's record
+    user.bucketName = bucketName;
+    await user.save();
+
+    res.status(201).json({ message: 'User registered successfully', bucket: bucketName });
+
   } catch (err) {
-    res.status(400).json({ message: err.message });
-  }
-});
-
-// Authenticate user and return JWT
-router.post('/login', async (req, res) => {
-  const { username, password } = req.body;
-
-  try {
-    const user = await User.findOne({ username });
-    if (!user) return res.status(400).json({ message: 'User not found' });
-
-    const isMatch = await user.comparePassword(password);
-    if (!isMatch) return res.status(400).json({ message: 'Invalid password' });
-
-    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
-    res.json({ token });
-  } catch (err) {
-    res.status(500).json({ message: err.message });
+    console.error(err);
+    res.status(500).json({ message: 'Server error' });
   }
 });
 
