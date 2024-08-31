@@ -83,6 +83,7 @@ const SecurityScanner = () => {
   );
 
   return (
+    
     <View style={styles.container}>
       <Text style={styles.title}>Security Scanner</Text>
       {loading ? (

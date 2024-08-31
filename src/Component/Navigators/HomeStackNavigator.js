@@ -6,6 +6,8 @@ import Register from '../Register';
 import SplashScreen from '../SplashScreen';
 import SecureVault from '../SecureVault'; // Ensure SecureVault is imported
 import SecurityScanner from '../PAGES/SecurityScanner';
+import ChangePasswordScreen from '../PAGES/ChangePasswordscreen';
+
 
 const Stack = createStackNavigator();
 
@@ -18,6 +20,33 @@ const HomeStackNavigator = () => {
       <Stack.Screen name="Register" component={Register} />
       <Stack.Screen name="SecureVault" component={SecureVault} /> {/* Register SecureVault */}
       <Stack.Screen name="SecurityScanner" component={SecurityScanner}/>
+      <Stack.Screen name="ChangePasswordScreen" component={ChangePasswordScreen}
+        options={{
+          presentation: 'modal',
+          headerShown: false,
+          cardStyle: { backgroundColor: 'transparent' },
+          cardOverlayEnabled: true,
+          cardStyleInterpolator: ({ current: { progress } }) => ({
+            cardStyle: {
+              transform: [
+                {
+                  translateY: progress.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [1000, 0],
+                  }),
+                },
+              ],
+            },
+            overlayStyle: {
+              opacity: progress.interpolate({
+                inputRange: [0, 1],
+                outputRange: [0, 0.5],
+              }),
+            },
+          }),
+        }}
+      />
+ 
     </Stack.Navigator>
   );
 };

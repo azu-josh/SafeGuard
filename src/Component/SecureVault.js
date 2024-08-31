@@ -1,109 +1,116 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, Image, TouchableOpacity, FlatList, StyleSheet, SafeAreaView, Alert, ActivityIndicator } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import * as ImagePicker from 'expo-image-picker';
 import { useActionSheet } from '@expo/react-native-action-sheet';
 import AWS from 'aws-sdk';
-import * as LocalAuthentication from 'expo-local-authentication'
+import * as LocalAuthentication from 'expo-local-authentication';
+import { useAuth } from './AuthContext';
 
 const SecureVault = () => {
   const navigation = useNavigation();
   const { showActionSheetWithOptions } = useActionSheet();
   const [photos, setPhotos] = useState([]);
   const [uploading, setUploading] = useState(false);
-  const [isBiometricsSupported, setIsBiometricsSupported] = useState(false);
+  const { faceIDEnabled } = useAuth();
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const dynamoDB = new AWS.DynamoDB.DocumentClient();
 
+  useFocusEffect(
+    React.useCallback(() => {
+      authenticateUser();
+    }, [])
+  );
 
-
-  [
-    {
-      "AllowedHeaders": ["*"],
-      "AllowedMethods": ["GET", "POST", "PUT"],
-      "AllowedOrigins": ["*"],
-      "ExposeHeaders": []
-    }
-  ]
-  //for my face id detection and fingerpring config
-  useEffect(()=>{
-    (async ()=> {
+  const authenticateUser = async () => {
+    try {
+      // Check if the device supports biometrics
       const compatible = await LocalAuthentication.hasHardwareAsync();
-      setIsBiometricsSupported(compatible);
-    })();
-  });
-const fallBackToDefualtAuth = () => {
-  console.log ('fall back to password authentication');
+      if (!compatible) {
+        Alert.alert(
+          'Biometrics Not Supported',
+          'Your device does not support biometric authentication',
+          [{ text: 'OK', onPress: () => navigation.goBack() }]
+        );
+        return;
+      }
 
-};
-const alertComponent = (title, mess, btnTxt, btnFunc) => {
-  return Alert.alert(title, mess, [
-    {
-      text:btnTxt,
-      onPress: btnFunc,
+      // Check if biometrics are enrolled on the device
+      const enrolled = await LocalAuthentication.isEnrolledAsync();
+      if (!enrolled) {
+        Alert.alert(
+          'No Biometrics Enrolled',
+          'Please enroll biometrics to use this feature',
+          [{ text: 'OK', onPress: () => navigation.goBack() }]
+        );
+        return;
+      }
+
+      // Prompt the user for biometric authentication
+      const result = await LocalAuthentication.authenticateAsync({
+        promptMessage: 'Authenticate to access Secure Vault',
+        fallbackLabel: 'Use PIN', // Fallback to PIN is mentioned but no automatic fallback
+      });
+
+      if (result.success) {
+        setIsAuthenticated(true);
+      } else {
+        Alert.alert(
+          'Authentication Failed',
+          'Unable to access Secure Vault',
+          [{ text: 'OK', onPress: () => navigation.goBack() }]
+        );
+      }
+    } catch (error) {
+      console.error('Error during biometric authentication', error);
+      Alert.alert(
+        'Authentication Error',
+        'An error occurred during authentication. Please try again.',
+        [{ text: 'OK', onPress: () => navigation.goBack() }]
+      );
     }
-  ])
-}
-
-const handleBiometricAuth = async ()=> {
-//check if it supports bio
-const isBiometricAvailable =await LocalAuthentication.hasHardwareAsync();
-//Go back if Bio is missing
-if (!isBiometricAvailable)
-  return alertComponet (
-'KINDLY ENTER PIN TO CONTINUE',
-'FACE ID OR FINGERPRINT ISNT SUPPORTED',
-'Ok',
-()=>fallBackToDefualtAuth()
-);
-//Check what Bio is Available 
-let supportedBiometrics;
-is (isBiometricAvailable)
-supportedBiometrics = await LocalAuthentication.supportedAuthenticationTypesAsync()
-
-//check saved Bio locally
-const savedBiometrics = await LocalAuthentication.isEnrolledAsync();
-if (!savedBiometrics)
-  return alertComponent(
-'Biometric Not Found',
-'Please use PIN to login',
-'Ok',
-()=> fallBackToDefualtAuth()
-);
-//authenicate with Bio
-const biometricAuth = await LocalAuthentication.authenticateAsync({
-  promptMessage: 'Login with FcaeID or TouchID',
-  cancelLabel: 'cancel',
-  disableDeviceFallback: true,
-});
-//  Log the to SecureVAULT on successs
-if (biometricAuth) {TwoButtonAlet()};
-console.log ({isBiometricAvailable});
-console.log ({supportedBiometrics});
-console.log({savedBiometrics});
-console.log ({biometricAuth});
-};
+  };
 
   // Configure AWS SDK
   const s3 = new AWS.S3({
-    accessKeyId: 'AKIATOMKLEFOGOJ3SRVO', // Replace with your actual access key, these are suposed to be encrypted to avoid hacking
+    accessKeyId: 'AKIATOMKLEFOGOJ3SRVO', // Replace with your actual access key
     secretAccessKey: 'cAqMdruPF3ouP+VGIBmnQTdApQMhb2dbKUNYGRiH', // Replace with your actual secret access key
     region: 'us-east-1', // Replace with your bucket's region
   });
 
+  useEffect(() => {
+    const fetchPhotos = async () => {
+      const dbParams = {
+        TableName: 'UserPhotos',
+        KeyConditionExpression: 'userId = :userId',
+        ExpressionAttributeValues: {
+          ':userId': 'user-unique-id', // Replace with the actual user ID
+        },
+      };
+  
+      const result = await dynamoDB.query(dbParams).promise();
+      const userPhotos = result.Items.map(item => ({ id: item.photoId, uri: item.photoUrl }));
+      setPhotos(userPhotos);
+    };
+  
+    fetchPhotos();
+  }, []);
+  
   const uploadImageToS3 = async (uri) => {
     setUploading(true);
     try {
       const response = await fetch(uri);
       const blob = await response.blob();
-  
+
       const uploadParams = {
-        Bucket: 'safeguardb45', // Replace with your bucket name
-        Key: `photos/photo_${Date.now()}.jpg`, // The name of the file in your S3 bucket
+        Bucket: 'safeguardb45',
+        Key: `photos/photo_${Date.now()}.jpg`,
         Body: blob,
         ContentType: blob.type,
       };
-  
-      s3.upload(uploadParams, (err, data) => {
+
+      s3.upload(uploadParams, async (err, data) => {
         setUploading(false);
         if (err) {
           console.error('Error uploading to S3:', err.message);
@@ -111,6 +118,18 @@ console.log ({biometricAuth});
         } else {
           const newPhoto = { id: Date.now().toString(), uri: data.Location };
           setPhotos([...photos, newPhoto]);
+
+          // Store the photo URL in DynamoDB
+          const dbParams = {
+            TableName: 'UserPhotos',
+            Item: {
+              userId: 'user-unique-id', // Replace with the actual user ID
+              photoId: newPhoto.id,
+              photoUrl: newPhoto.uri,
+            },
+          };
+
+          await dynamoDB.put(dbParams).promise();
         }
       });
     } catch (e) {
@@ -119,7 +138,7 @@ console.log ({biometricAuth});
       Alert.alert('Upload failed', 'Network request failed');  
     }
   };
-  
+
   const handleAddPhotos = () => {
     showActionSheetWithOptions({
         options: ['Cancel', 'Photo Library', 'Camera'],
@@ -164,6 +183,10 @@ console.log ({biometricAuth});
       }
     })();
   }, []);
+
+  if (!isAuthenticated) {
+    return null; // Do not render the component until authenticated
+  }
 
   return (
     <SafeAreaView style={styles.safeArea}>

@@ -14,13 +14,18 @@ const LoginC = ({ navigation }) => {
   const handleLogin = async () => {
     try {
       await login(username, password);
+      console.log('Login attempt finished. Authenticated:', isAuthenticated);
       if (isAuthenticated) {
         navigation.navigate('App');
+      } else {
+        setError('Authentication failed. Please check your credentials.');
       }
     } catch (err) {
+      console.error('Login error:', err);
       setError('Error logging in. Please try again.');
     }
   };
+  
 
   return (
     <ImageBackground source={require('../Assets/WhatsApp Image 2024-05-07 at 02.23.22 (1).jpeg')} style={styles.loginPage}>

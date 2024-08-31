@@ -6,9 +6,10 @@ import Ionicon from 'react-native-vector-icons/Ionicons';
 import Octicon from 'react-native-vector-icons/Octicons';
 import Home from './Home';
 import Reports from './Reports';
-import AddApp from './AddApp';
+import AddApp from './ProtectionScreen';
 import ProfilePage from './PAGES/ProfilePage'; // Ensure the path is correct
 import { useNavigation } from '@react-navigation/native';
+import ProtectionScreen from './ProtectionScreen';
 
 const Tab = createBottomTabNavigator();
 
@@ -79,7 +80,7 @@ function MyTabs() {
       <Tab.Screen name="Home" component={Home} />
       <Tab.Screen name="Reports" component={Reports} />
       <Tab.Screen name="Profile" component={ProfilePage} />
-      <Tab.Screen name="AddApp" component={AddApp} />
+      <Tab.Screen name="ProtectionScreen" component={ProtectionScreen} />
     </Tab.Navigator>
   );
 }

@@ -75,7 +75,7 @@ const Register = ({ navigation }) => {
             placeholderTextColor="#fff"
             value={username}
             onChangeText={setUsername}
-            required
+            autoCapitalize="none"
           />
         </View>
         {suggestedUsername && (
@@ -92,7 +92,7 @@ const Register = ({ navigation }) => {
             value={email}
             onChangeText={setEmail}
             keyboardType="email-address"
-            required
+            autoCapitalize="none"
           />
         </View>
         <View style={styles.inputBox}>
@@ -104,7 +104,7 @@ const Register = ({ navigation }) => {
             value={password}
             onChangeText={handlePasswordChange}
             secureTextEntry
-            required
+            autoCapitalize="none"
           />
         </View>
         <View style={styles.passwordStrengthContainer}>
@@ -121,7 +121,7 @@ const Register = ({ navigation }) => {
             value={confirmPassword}
             onChangeText={setConfirmPassword}
             secureTextEntry
-            required
+            autoCapitalize="none"
           />
         </View>
 
@@ -178,12 +178,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: 'rgba(255, 255, 255, 0.5)',
     zIndex: 1,
+    borderRadius: 10,
   },
   title: {
     fontSize: 28,
     textAlign: 'center',
     color: 'white',
     marginBottom: 20,
+    fontWeight: 'bold',
   },
   inputBox: {
     position: 'relative',
@@ -233,10 +235,13 @@ const styles = StyleSheet.create({
   },
   suggestionText: {
     color: 'yellow',
+    fontSize: 14,
   },
   error: {
     color: 'red',
     marginVertical: 10,
+    fontSize: 14,
+    textAlign: 'center',
   },
   button: {
     width: '100%',

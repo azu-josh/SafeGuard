@@ -23,6 +23,7 @@ import UploadFile from './src/Component/UploadFile';
 
 import { ActionSheetProvider } from '@expo/react-native-action-sheet';
 import SecurityScanner from './src/Component/PAGES/SecurityScanner';
+import ChangePasswordScreen from './src/Component/PAGES/ChangePasswordscreen';
 
 
 
@@ -48,6 +49,7 @@ const AppStack = () => (
   >
     <Drawer.Screen name="HomeDrawer" component={Layout} />
     <Drawer.Screen name="HomeStackNavigator" component={HomeStackNavigator} />
+    <Drawer.Screen name="ChangePasswordscreen" component={ChangePasswordScreen} />
     <Drawer.Screen name="SecureVault" component={SecureVault} />
     <Drawer.Screen name="SecurityScanner" component={SecurityScanner} />
     <Drawer.Screen name="AdsBlocker" component={AdBlockerComponent} />

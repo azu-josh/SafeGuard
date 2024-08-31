@@ -7,6 +7,11 @@ const UserSchema = new mongoose.Schema({
     required: true,
     unique: true,
   },
+  email: {
+    type: String,
+    required: true,
+    unique:true,
+  },
   password: {
     type: String,
     required: true,
@@ -26,16 +31,3 @@ UserSchema.methods.comparePassword = function(candidatePassword) {
 };
 
 module.exports = mongoose.model('User', UserSchema);
-app.get('/api/getUsername', async (req, res) => {
-  try {
-    const userId = req.user._id; // Assuming userID is available through some authentication middleware
-    const user = await User.findById(userId);
-    if (user) {
-      res.json({ username: user.username });
-    } else {
-      res.status(404).send('User not found');
-    }
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-});

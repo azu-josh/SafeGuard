@@ -14,6 +14,7 @@ import Home from './Home';
 import ProfilePage from './PAGES/ProfilePage';
 import Reports from './PAGES/Reports';
 import PrivacySettings from './PAGES/PrivacySettings';
+import ProtectionScreen from './ProtectionScreen';
 
 const Drawer = createDrawerNavigator();
 const Tab = createBottomTabNavigator();
@@ -32,7 +33,7 @@ const BottomTabNavigator = () => (
           iconName = 'graph';
         } else if (route.name === 'Profile') {
           iconName = 'gear';
-        } else if (route.name === 'AddApp') {
+        } else if (route.name === 'ProtectionScreen') {
           iconName = 'shield-check';
         }
 
@@ -63,7 +64,7 @@ const BottomTabNavigator = () => (
   >
     <Tab.Screen name="Home" component={Home} />
     <Tab.Screen name="Reports" component={Reports} />
-    <Tab.Screen name="AddApp" component={Home} />
+    <Tab.Screen name="ProtectionScreen" component={ProtectionScreen} />
     <Tab.Screen name="Profile" component={ProfilePage} />
    
   </Tab.Navigator>
@@ -76,7 +77,7 @@ const Layout = () => {
   useEffect(() => {
     const fetchUsername = async () => {
       try {
-        const response = await axios.get('http://localhost:5000/api/getUsername');
+        const response = await axios.get('http://172.20.10.4:50000/api/getUsername');
         setUsername(response.data.username); // Set username from response
       } catch (error) {
         console.error('Failed to fetch username:', error);

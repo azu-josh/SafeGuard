@@ -6,7 +6,7 @@ import Icon from 'react-native-vector-icons/Ionicons';
 
 const ProfileImage = require('../PAGES/profile.jpeg'); // Ensure the path to the profile image is correct
 
-const ProfilePage = () => {
+const CustomizePage = () => {
   const navigation = useNavigation();
 
   return (
@@ -14,7 +14,7 @@ const ProfilePage = () => {
      
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Account Settings</Text>
-        <TouchableOpacity style={styles.option} onPress={() => navigation.navigate('ChangePassword')}>
+        <TouchableOpacity style={styles.option} onPress={() => navigation.navigate('ChangePasswordscreen')}>
           <Icon name="lock-closed-outline" size={20} style={styles.icon} />
           <Text style={styles.optionText}>Change Password</Text>
         </TouchableOpacity>
@@ -95,4 +95,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default ProfilePage;
+export default CustomizePage;

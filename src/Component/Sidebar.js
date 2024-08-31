@@ -4,9 +4,11 @@ import { View, Text, StyleSheet, TouchableOpacity, Switch } from 'react-native';
 import Icon from 'react-native-vector-icons/Octicons'
 import { useTheme } from './ThemeContext';
 
+
 const Sidebar = ({ navigation }) => {
   const { darkMode, toggleDarkMode } = useTheme();
   const styles = darkMode ? darkStyles : lightStyles;
+  
 
   return (
     <View style={styles.sidebar}>

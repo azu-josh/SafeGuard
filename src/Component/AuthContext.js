@@ -6,9 +6,12 @@ const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+ const [faceIDEnabled, setFaceIDEnabled] = useState(false);
 
+   
   const register = async (username, email, password) => {
     try {
+      console.log('Registering user:', { username, email, password }); // Log request data
       await axios.post('http://172.20.10.4:5000/auth/register', { username, email, password });
       alert('User registered successfully');
     } catch (error) {
@@ -19,6 +22,7 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (username, password) => {
     try {
+      console.log('Attempting login with:', { username, password }); // Log request data
       const response = await axios.post('http://172.20.10.4:5000/auth/login', { username, password });
       setIsAuthenticated(true);
       alert('Login successful');
@@ -29,7 +33,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ isAuthenticated, setIsAuthenticated, register, login }}>
+    <AuthContext.Provider value={{ isAuthenticated, setIsAuthenticated,faceIDEnabled, setFaceIDEnabled, register, login }}>
       {children}
     </AuthContext.Provider>
   );
