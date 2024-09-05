@@ -1,0 +1,6 @@
+{
+    "files.exclude": {
+        "**/Thumbs.db": false
+    },
+    "java.configuration.updateBuildConfiguration": "interactive"
+}

@@ -1,0 +1,62 @@
+apply plugin: "com.android.application"
+apply plugin: "com.facebook.react"
+id 'com.android.application'
+id 'com.google.gms.google-services'
+android {
+    compileSdkVersion rootProject.ext.compileSdkVersion
+
+    defaultConfig {
+        applicationId "com.safeguard"
+        minSdkVersion rootProject.ext.minSdkVersion
+        targetSdkVersion rootProject.ext.targetSdkVersion
+        versionCode 1
+        versionName "1.0"
+    }
+
+    signingConfigs {
+        debug {
+            storeFile file('debug.keystore')
+            storePassword 'android'
+            keyAlias 'androiddebugkey'
+            keyPassword 'android'
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled true
+            proguardFiles getDefaultProguardFile("proguard-android.txt"), "proguard-rules.pro"
+            signingConfig signingConfigs.debug
+        }
+    }
+
+    // Enabling Hermes
+    project.ext.react = [
+        enableHermes: true  // Change to false to disable Hermes
+    ]
+
+    packagingOptions {
+        pickFirst '**/*.so'
+        exclude '**/libjsc.so'
+    }
+}
+
+dependencies {
+    implementation fileTree(dir: "libs", include: ["*.jar"])
+    implementation "com.facebook.react:react-native:+"  // From node_modules
+    implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlinVersion"
+    implementation project(':react-native-vector-icons')
+implementation platform('com.google.firebase:firebase-bom:33.1.2')
+implementation 'com.google.firebase:firebase-analytics'
+    // Adding Hermes dependency based on the enabled flag above
+    if (project.ext.react.get("enableHermes", false)) {
+        def hermesPath = "../../node_modules/hermes-engine/android/";
+        debugImplementation files(hermesPath + "hermes-debug.aar")
+        releaseImplementation files(hermesPath + "hermes-release.aar")
+    } else {
+        implementation jscFlavor
+    }
+}
+
+// Applying vector icons script
+apply from: "../../node_modules/react-native-vector-icons/fonts.gradle"
