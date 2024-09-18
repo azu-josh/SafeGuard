@@ -34,7 +34,7 @@
     "expo-image-picker": "~15.0.5",
     "expo-local-authentication": "~14.0.1",
     "expo-status-bar": "~1.12.1",
-    "express": "^4.19.2",
+    "express": "^4.20.0",
     "firebase": "^10.12.3",
     "got": "^14.4.2",
     "jsonwebtoken": "^9.0.2",
