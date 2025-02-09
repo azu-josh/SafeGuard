@@ -15,7 +15,7 @@
     "@react-native-community/checkbox": "^0.5.17",
     "@react-native-community/masked-view": "^0.1.11",
     "@react-native-community/netinfo": "^11.3.2",
-    "@react-native-firebase/app": "^20.3.0",
+    "@react-native-firebase/app": "^21.7.2",
     "@react-native-firebase/messaging": "^20.3.0",
     "@react-native-firebase/storage": "^20.1.0",
     "@react-navigation/bottom-tabs": "^6.5.20",
